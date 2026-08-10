@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Caminhada Pet</title>
+
+    <!-- CONFIGURAÇÕES DE PWA (Ícone e Tela Cheia) -->
+    <link rel="manifest" href='data:application/json,{"name":"Caminhada Pet","short_name":"Caminhada","start_url":"./index.html","display":"standalone","background_color":"#121212","theme_color":"#121212","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/3063/3063822.png","sizes":"512x512","type":"image/png"}]}'>
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#121212">
+
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #121212; color: #fff; padding: 20px; }
+        .card { background: #1e1e1e; border-radius: 20px; padding: 25px; margin-bottom: 20px; text-align: center; border: 1px solid #333; }
+        .timer-display { font-size: 4rem; font-weight: bold; color: #00e676; margin: 20px 0; font-family: monospace; }
+        
+        /* BOTÃO GRANDE DE DESLIGAMENTO */
+        .btn-big-stop { 
+            width: 100%; height: 100px; border-radius: 20px; border: none; 
+            font-size: 1.8rem; font-weight: bold; background: #d32f2f; color: #fff;
+            margin-top: 30px; box-shadow: 0 4px 15px rgba(211,47,47,0.4); cursor: pointer;
+        }
+        
+        .btn-start { width: 100%; padding: 20px; border-radius: 15px; border: none; font-size: 1.2rem; background: #4caf50; color: #fff; cursor: pointer; }
+        .gps-info { font-size: 0.9rem; color: #81c784; margin-top: 10px; background: #1a271d; padding: 10px; border-radius: 10px; }
+    </style>
+</head>
+<body>
+
+    <!-- TELA INICIAL -->
+    <div id="setup-screen" class="card">
+        <h1>🐾 Caminhada Pet</h1>
+        <button class="btn-start" onclick="iniciarCaminhada()">Iniciar Nova Caminhada</button>
+    </div>
+
+    <!-- TELA ATIVA -->
+    <div id="active-screen" class="card" style="display:none;">
+        <h2 style="color: #4caf50;">Em Andamento</h2>
+        <div id="time-display" class="timer-display">00:00</div>
+        <div id="gps-status" class="gps-info">Buscando GPS...</div>
+        
+        <button class="btn-big-stop" onclick="finalizarManualmente()">PARAR CAMINHADA</button>
+    </div>
+
+    <script>
+        let tempoInicio = 0;
+        let timerInterval = null;
+        let watchGpsId = null;
+        let origemCoords = null;
+        const RAIO_CHEGADA = 50; 
+
+        function iniciarCaminhada() {
+            navigator.geolocation.getCurrentPosition((pos) => {
+                origemCoords = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                tempoInicio = Date.now();
+                document.getElementById('setup-screen').style.display = 'none';
+                document.getElementById('active-screen').style.display = 'block';
+                
+                timerInterval = setInterval(atualizarTempo, 1000);
+                
+                watchGpsId = navigator.geolocation.watchPosition(verificarChegada, null, {
+                    enableHighAccuracy: true, timeout: 5000, maximumAge: 0
+                });
+            }, () => alert("Por favor, ative o GPS."), { enableHighAccuracy: true });
+        }
+
+        function atualizarTempo() {
+            const diff = Math.floor((Date.now() - tempoInicio) / 1000);
+            const m = Math.floor(diff/60).toString().padStart(2, '0');
+            const s = (diff % 60).toString().padStart(2, '0');
+            document.getElementById('time-display').innerText = `${m}:${s}`;
+        }
+
+        function verificarChegada(pos) {
+            const dist = calcularDistancia(pos.coords.latitude, pos.coords.longitude, origemCoords.lat, origemCoords.lng);
+            document.getElementById('gps-status').innerText = `Distância de casa: ${Math.round(dist)}m`;
+
+            // Trava de 2 minutos para evitar encerramento acidental na saída
+            const decorridoMinutos = (Date.now() - tempoInicio) / 60000;
+            if (decorridoMinutos > 2 && dist < RAIO_CHEGADA) {
+                alert("Chegou em casa! Encerrando.");
+                finalizarManualmente();
+            }
+        }
+
+        function finalizarManualmente() {
+            clearInterval(timerInterval);
+            if(watchGpsId) navigator.geolocation.clearWatch(watchGpsId);
+            alert("Caminhada encerrada.");
+            location.reload();
+        }
+
+        function calcularDistancia(lat1, lon1, lat2, lon2) {
+            const R = 6371e3;
+            const dLat = (lat2-lat1) * Math.PI/180;
+            const dLon = (lon2-lon1) * Math.PI/180;
+            const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
+    </script>
+</body>
+</html>
