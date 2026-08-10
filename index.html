@@ -1,39 +1,224 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Caminhada Pet</title>
-
-    <!-- CONFIGURAÇÕES DE PWA (Ícone e Tela Cheia) -->
-    <link rel="manifest" href='data:application/json,{"name":"Caminhada Pet","short_name":"Caminhada","start_url":"./index.html","display":"standalone","background_color":"#121212","theme_color":"#121212","icons":[{"src":"https://cdn-icons-png.flaticon.com/512/3063/3063822.png","sizes":"512x512","type":"image/png"}]}'>
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="theme-color" content="#121212">
-
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #121212; color: #fff; padding: 20px; }
-        .card { background: #1e1e1e; border-radius: 20px; padding: 25px; margin-bottom: 20px; text-align: center; border: 1px solid #333; }
-        .timer-display { font-size: 4rem; font-weight: bold; color: #00e676; margin: 20px 0; font-family: monospace; }
-        
-        /* BOTÃO GRANDE DE DESLIGAMENTO */
-        .btn-big-stop { 
-            width: 100%; height: 100px; border-radius: 20px; border: none; 
-            font-size: 1.8rem; font-weight: bold; background: #d32f2f; color: #fff;
-            margin-top: 30px; box-shadow: 0 4px 15px rgba(211,47,47,0.4); cursor: pointer;
-        }
-        
-        .btn-start { width: 100%; padding: 20px; border-radius: 15px; border: none; font-size: 1.2rem; background: #4caf50; color: #fff; cursor: pointer; }
-        .gps-info { font-size: 0.9rem; color: #81c784; margin-top: 10px; background: #1a271d; padding: 10px; border-radius: 10px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Caminhada Pet</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#121212">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #121212;
+      color: #e0e0e0;
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+    .card {
+      background: #1e1e1e;
+      border-radius: 16px;
+      padding: 24px;
+      width: 100%;
+      max-width: 480px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+    h1 {
+      color: #4caf50;
+      font-size: 1.4rem;
+      text-align: center;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .form-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 0.85rem;
+      color: #aaa;
+      margin-bottom: 6px;
+    }
+    select, input {
+      width: 100%;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      background: #2a2a2a;
+      color: #fff;
+      font-size: 1rem;
+    }
+    .btn {
+      width: 100%;
+      padding: 14px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin-top: 10px;
+      transition: background 0.2s;
+    }
+    .btn-start { background: #4caf50; color: #fff; }
+    .btn-stop { background: #e53935; color: #fff; }
+    .btn-secondary { background: #333; color: #ccc; margin-top: 12px; }
+    
+    .status-panel {
+      display: none;
+      text-align: center;
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid #333;
+    }
+    .timer {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #4caf50;
+      margin: 10px 0;
+    }
+    .info-text {
+      color: #aaa;
+      font-size: 0.9rem;
+      margin-bottom: 15px;
+    }
+  </style>
 </head>
 <body>
 
-    <!-- TELA INICIAL -->
-    <div id="setup-screen" class="card">
-        <h1>🐾 Caminhada Pet</h1>
-        <button class="btn-start" onclick="iniciarCaminhada()">Iniciar Nova Caminhada</button>
+  <div class="card">
+    <h1>🐾 Caminhada Automática</h1>
+
+    <!-- FORMULÁRIO COMPLETO -->
+    <div id="setup-form">
+      <div class="form-group">
+        <label for="activity">Tipo de Atividade:</label>
+        <select id="activity">
+          <option value="passeio">Passeio com Pet 🐾</option>
+          <option value="corrida">Corrida / Exercício 🏃</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="time-unit">Unidade de Tempo:</label>
+        <select id="time-unit">
+          <option value="1">Minutos (Uso Real)</option>
+          <option value="60">Segundos (Aceleração para Testes)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="target-time">Tempo Target / Mínimo Pretendido (minutos):</label>
+        <input type="number" id="target-time" value="15" min="1">
+      </div>
+
+      <div class="form-group">
+        <label for="audio-interval">Intervalo de Avisos Sonoros (minutos):</label>
+        <input type="number" id="audio-interval" value="5" min="1">
+      </div>
+
+      <button class="btn btn-start" onclick="iniciarCaminhada()">Iniciar Caminhada</button>
+      <button class="btn btn-secondary">Ver Histórico e Consolidador</button>
     </div>
+
+    <!-- PAINEL DE ACOMPANHAMENTO COM GPS -->
+    <div id="status-panel" class="status-panel">
+      <div class="info-text" id="status-label">Em Andamento</div>
+      <div class="timer" id="timer-display">00:00</div>
+      <div class="info-text" id="distance-display">Buscando GPS...</div>
+
+      <button class="btn btn-stop" onclick="pararCaminhada()">PARAR CAMINHADA</button>
+    </div>
+  </div>
+
+  <script>
+    let timerInterval = null;
+    let watchPositionId = null;
+    let secondsElapsed = 0;
+    let homeCoords = null;
+
+    function iniciarCaminhada() {
+      document.getElementById('setup-form').style.display = 'none';
+      document.getElementById('status-panel').style.display = 'block';
+
+      secondsElapsed = 0;
+      atualizarTimer();
+
+      // Inicia o cronômetro
+      timerInterval = setInterval(() => {
+        secondsElapsed++;
+        atualizarTimer();
+      }, 1000);
+
+      // Inicia rastreamento por GPS
+      if ('geolocation' in navigator) {
+        watchPositionId = navigator.geolocation.watchPosition(
+          (position) => {
+            const { latitude, longitude } = position.coords;
+
+            // Define a posição inicial de casa no primeiro sinal recebido
+            if (!homeCoords) {
+              homeCoords = { latitude, longitude };
+            }
+
+            const dist = calcularDistanciaMetros(
+              homeCoords.latitude, homeCoords.longitude,
+              latitude, longitude
+            );
+
+            document.getElementById('distance-display').innerText = `Distância de casa: ${Math.round(dist)}m`;
+          },
+          (error) => {
+            document.getElementById('distance-display').innerText = 'GPS Indisponível';
+          },
+          { enableHighAccuracy: true }
+        );
+      } else {
+        document.getElementById('distance-display').innerText = 'GPS não suportado neste dispositivo';
+      }
+    }
+
+    function pararCaminhada() {
+      clearInterval(timerInterval);
+      if (watchPositionId !== null) {
+        navigator.geolocation.clearWatch(watchPositionId);
+      }
+
+      alert('Caminhada encerrada.');
+
+      // Reseta para a tela inicial
+      document.getElementById('status-panel').style.display = 'none';
+      document.getElementById('setup-form').style.display = 'block';
+      homeCoords = null;
+    }
+
+    function atualizarTimer() {
+      const mins = String(Math.floor(secondsElapsed / 60)).padStart(2, '0');
+      const secs = String(secondsElapsed % 60).padStart(2, '0');
+      document.getElementById('timer-display').innerText = `${mins}:${secs}`;
+    }
+
+    // Fórmula de Haversine para calcular distância em metros
+    function calcularDistanciaMetros(lat1, lon1, lat2, lon2) {
+      const R = 6371e3; // Raio da Terra em metros
+      const rad1 = lat1 * Math.PI / 180;
+      const rad2 = lat2 * Math.PI / 180;
+      const dLat = (lat2 - lat1) * Math.PI / 180;
+      const dLon = (lon2 - lon1) * Math.PI / 180;
+
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(rad1) * Math.cos(rad2) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      return R * c;
+    }
+  </script>
+</body>
+</html>
 
     <!-- TELA ATIVA -->
     <div id="active-screen" class="card" style="display:none;">
