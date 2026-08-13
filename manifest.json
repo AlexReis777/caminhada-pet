@@ -1,7 +1,7 @@
 {
   "name": "Caminhada Pet",
   "short_name": "Caminhada Pet",
-  "start_url": ".",
+  "start_url": "/caminhada-pet/",
   "display": "standalone",
   "icons": [
     {
