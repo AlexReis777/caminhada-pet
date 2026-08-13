@@ -1,0 +1,13 @@
+{
+  "name": "Caminhada Pet",
+  "short_name": "Caminhada Pet",
+  "start_url": "/",
+  "display": "standalone",
+  "icons": [
+    {
+      "src": "logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
